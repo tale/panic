@@ -1,6 +1,6 @@
 Package: me.renai.panic
 Name: Panic!
-Version: 1.0.0
+Version: 1.0.1
 Architecture: iphoneos-arm
 Description: Stop! Don't panic, you can still fix this...
 Maintainer: Renaitare <support@renai.me>
