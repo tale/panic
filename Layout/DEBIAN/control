@@ -1,0 +1,9 @@
+Package: me.renai.panic
+Name: Panic!
+Version: 1.0.0
+Architecture: iphoneos-arm
+Description: Stop! Don't panic, you can still fix this...
+Maintainer: Renaitare <support@renai.me>
+Author: Renaitare <support@renai.me>
+Section: Tweaks
+Depends: mobilesubstrate (>= 0.9.5000), firmware (>= 11.0)
