@@ -50,16 +50,8 @@
 - (void)respringDevice {
 	if (self.respringEnabled) {
 		pid_t pid;
-		BOOL isDirectory;
-
-		// Check to see if 'sbreload' exists, otherwise just respring via 'killall'
-		if ([[NSFileManager defaultManager] fileExistsAtPath:@"/usr/bin/sbreload" isDirectory:&isDirectory]) {
-			const char* args[] = {"sbreload", NULL};
-			posix_spawn(&pid, "/usr/bin/sbreload", NULL, NULL, (char* const*)args, NULL);
-		} else {
-			const char* args[] = {"killall", "SpringBoard", NULL};
-			posix_spawn(&pid, "/usr/bin/killall", NULL, NULL, (char* const*)args, NULL);
-		}
+		const char* args[] = {"sbreload", NULL};
+		posix_spawnp(&pid, "sbreload", NULL, NULL, (char* const*)args, NULL);
 	}
 }
 
@@ -67,7 +59,7 @@
 	if (self.safemodeEnabled) {
 		pid_t pid;
 		const char* args[] = {"killall", "-SEGV", "SpringBoard", NULL};
-		posix_spawn(&pid, "/usr/bin/killall", NULL, NULL, (char* const*)args, NULL);
+		posix_spawnp(&pid, "killall", NULL, NULL, (char* const*)args, NULL);
 	}
 }
 

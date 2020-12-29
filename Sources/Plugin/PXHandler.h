@@ -1,6 +1,13 @@
 #import <Foundation/NSUserDefaults+Domain.h>
 #import <Foundation/Foundation.h>
+#import <UIKit/UIKit.h>
 #import <spawn.h>
+
+#ifdef DEBUG
+#define NSLog(...) NSLog(__VA_ARGS__)
+#else
+#define NSLog(...) (void)0
+#endif
 
 typedef enum {
 	PXPhysicalButtonTypeVolumeUp = 102,

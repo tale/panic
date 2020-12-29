@@ -42,7 +42,7 @@
 				<key>label</key>
 				<string>Safemode Enabled</string>
 				<key>PostNotification</key>
-				<string>me.renai.panic/options.update</string>
+				<string>me.renai.panic/settings.update</string>
 			</dict>
 			<dict>
 				<key>cell</key>
@@ -56,7 +56,7 @@
 				<key>label</key>
 				<string>Respring Enabled</string>
 				<key>PostNotification</key>
-				<string>me.renai.panic/options.update</string>
+				<string>me.renai.panic/settings.update</string>
 			</dict>
 			<dict>
 				<key>cell</key>
@@ -68,7 +68,7 @@
 				<key>key</key>
 				<string>safemode_sequence</string>
 				<key>PostNotification</key>
-				<string>me.renai.panic/options.update</string>
+				<string>me.renai.panic/settings.update</string>
 				<key>label</key>
 				<string>Safemode Sequence</string>
 				<key>isController</key>
@@ -84,7 +84,7 @@
 				<key>key</key>
 				<string>respring_sequence</string>
 				<key>PostNotification</key>
-				<string>me.renai.panic/options.update</string>
+				<string>me.renai.panic/settings.update</string>
 				<key>label</key>
 				<string>Respring Sequence</string>
 				<key>isController</key>

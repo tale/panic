@@ -1,4 +1,3 @@
-#import <UIKit/UIKit.h>
 #import "PXHandler.h"
 
 %hook SpringBoard
@@ -37,5 +36,5 @@ static void notificationCallback(CFNotificationCenterRef center, void *observer,
 
 %ctor {
 	notificationCallback(NULL, NULL, NULL, NULL, NULL);
-	CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, notificationCallback, CFSTR("me.renai.panic/options.update"), NULL, CFNotificationSuspensionBehaviorCoalesce);
+	CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, notificationCallback, CFSTR("me.renai.panic/settings.update"), NULL, CFNotificationSuspensionBehaviorCoalesce);
 }
