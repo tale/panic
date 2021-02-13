@@ -32,11 +32,11 @@ static void notificationCallback(CFNotificationCenterRef center, void *observer,
 }
 
 __attribute__((constructor)) static void loadTweak(int __unused argc, char __unused **argv, char __unused **envp) {
-	// pref callback
+	// Pref callback
 	notificationCallback(NULL, NULL, NULL, NULL, NULL);
 	CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, notificationCallback, CFSTR("me.renai.panic/options.update"), NULL, CFNotificationSuspensionBehaviorCoalesce);
 
-	// load hook
+	// Load hook
 	MSHookMessageEx(objc_getClass("SpringBoard"),
         @selector(_handlePhysicalButtonEvent:),
         (IMP) &hooked_SpringBoard_handlePhysicalButtonEvent,
