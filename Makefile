@@ -1,5 +1,5 @@
 INSTALL_TARGET_PROCESSES = SpringBoard
-SUBPROJECTS = Sources/Plugin Sources/Settings
+SUBPROJECTS = Sources/Tweak Sources/Preferences
 
 include $(THEOS)/makefiles/common.mk
 
