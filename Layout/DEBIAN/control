@@ -1,9 +1,13 @@
-Package: me.renai.panic
+Package: me.tale.panic
 Name: Panic!
-Version: 1.1.1
+Version: 1.1.2
 Architecture: iphoneos-arm
 Description: Stop! Don't panic, you can still fix this...
-Maintainer: Renaitare <support@renai.me>
-Author: Renaitare <support@renai.me>
+Maintainer: Aarnav Tale <aarnav@tale.me>
+Author: Renaitare <aarnav@tale.me>
 Section: Tweaks
-Depends: mobilesubstrate (>= 0.9.5000), firmware (>= 11.0)
+Depends: mobilesubstrate (>= 0.9.5000), firmware (>= 11.0), preferenceloader
+Conflicts: me.renai.panic
+Icon: https://apt.tale.me/api/me.tale.panic.png
+Depiction: https://apt.tale.me/me.tale.panic
+SileoDepiction: https://apt.tale.me/me.tale.panic.json
