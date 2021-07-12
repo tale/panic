@@ -1,18 +1,42 @@
 #import <UIKit/UIKit.h>
 #import "Tweak.h"
 #import "PXHandler.h"
+#import <dlfcn.h>
+#import <objc/runtime.h>
+#include <substrate.h>
 
-static void hooked_SpringBoard_handlePhysicalButtonEvent (SpringBoard *self, SEL cmd, UIPressesEvent *sender) {
-	if (([PXHandler globalHandler].safemodeEnabled || [PXHandler globalHandler].respringEnabled) && sender.allPresses.allObjects[0] != nil) {
-		PXPhysicalButtonType buttonType = sender.allPresses.allObjects[0].type;
-		PXPhysicalButtonState buttonState = sender.allPresses.allObjects[0].force;
-		[[PXHandler globalHandler] handlePressWithType:buttonType state:buttonState];
+static short (*LBHookMessage)(Class class, SEL selector, void *implementation, void *original);
+
+void GenericHook(Class class, SEL selector, IMP implementation, IMP *original) {
+	// For what it's worth, I hate writing nested code.
+	// Sorry for anyone reading this.
+	if (!LBHookMessage) {
+		void *lb_handle = dlopen("/usr/lib/libblackjack.dylib", RTLD_NOW);
+		if (lb_handle != NULL) {
+			LBHookMessage = dlsym(lb_handle, "LBHookMessage");
+
+			if (LBHookMessage == NULL) {
+				dlclose(lb_handle);
+				lb_handle = NULL;
+			}
+		}
 	}
 
-	orig_SpringBoard_handlePhysicalButtonEvent(self, cmd, sender);
+	// Try to hook via libhooker first, if it fails then revert to Substrate
+	if (LBHookMessage) {
+		short hook_status = LBHookMessage(class, selector, (void *)implementation, (void **)original);
+
+		// 0 means LIBHOOKER_OK
+		// So we don't need to run MSHookMessageEx
+		if (hook_status == 0) {
+			return;
+		}
+	}
+
+	MSHookMessageEx(class, selector, implementation, original);
 }
 
-static void notificationCallback(CFNotificationCenterRef center, void *observer, CFStringRef name, const void *object, CFDictionaryRef userInfo) {
+static void notificationCallback() {
 	NSUserDefaults *defaults = [[NSUserDefaults alloc] initWithSuiteName:@"me.renai.panic"];
 
 	NSNumber *respringEnabled = [defaults objectForKey:@"respring_enabled"];
@@ -33,12 +57,25 @@ static void notificationCallback(CFNotificationCenterRef center, void *observer,
 
 __attribute__((constructor)) static void loadTweak(int __unused argc, char __unused **argv, char __unused **envp) {
 	// Pref callback
-	notificationCallback(NULL, NULL, NULL, NULL, NULL);
+	notificationCallback();
 	CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, notificationCallback, CFSTR("me.renai.panic/options.update"), NULL, CFNotificationSuspensionBehaviorCoalesce);
 
 	// Load hook
-	MSHookMessageEx(objc_getClass("SpringBoard"),
-        @selector(_handlePhysicalButtonEvent:),
-        (IMP) &hooked_SpringBoard_handlePhysicalButtonEvent,
-        (IMP *) &orig_SpringBoard_handlePhysicalButtonEvent);
+	GenericHook(
+		objc_getClass("SpringBoard"),
+		@selector(_handlePhysicalButtonEvent:),
+		(IMP) &hooked_SpringBoard_handlePhysicalButtonEvent,
+		(IMP *) &orig_SpringBoard_handlePhysicalButtonEvent
+	);
+}
+
+static void hooked_SpringBoard_handlePhysicalButtonEvent(SpringBoard *self, SEL cmd, UIPressesEvent *sender) {
+	if (([PXHandler globalHandler].safemodeEnabled || [PXHandler globalHandler].respringEnabled) && sender.allPresses.allObjects[0] != nil) {
+		PXPhysicalButtonType buttonType = sender.allPresses.allObjects[0].type;
+		PXPhysicalButtonState buttonState = sender.allPresses.allObjects[0].force;
+		[[PXHandler globalHandler] handlePressWithType:buttonType state:buttonState];
+	}
+
+	NSLog(@"[Panic] %@", sender.allPresses);
+	orig_SpringBoard_handlePhysicalButtonEvent(self, cmd, sender);
 }

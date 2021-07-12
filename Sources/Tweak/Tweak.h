@@ -1,5 +1,4 @@
 #import <objc/runtime.h>
-#include <substrate.h>
 
 @interface SpringBoard : UIApplication
 @end
