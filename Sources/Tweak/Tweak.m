@@ -1,12 +1,14 @@
-#import <UIKit/UIKit.h>
-#import "Tweak.h"
 #import "PXHandler.h"
-#import <dlfcn.h>
 #import <objc/runtime.h>
-#include <substrate.h>
+#import <UIKit/UIKit.h>
+#import <substrate.h>
+#import <dlfcn.h>
 
+@interface SpringBoard : UIApplication
+@end
+
+// Support generic hooking with either Libhooker or MobileSubstrate :)
 static short (*LBHookMessage)(Class class, SEL selector, void *implementation, void *original);
-
 void GenericHook(Class class, SEL selector, IMP implementation, IMP *original) {
 	// For what it's worth, I hate writing nested code.
 	// Sorry for anyone reading this.
@@ -55,7 +57,14 @@ static void notificationCallback() {
 	NSLog(@"Updated Panic! Preferences");
 }
 
-__attribute__((constructor)) static void loadTweak(int __unused argc, char __unused **argv, char __unused **envp) {
+// Springboard hook that delegates press events to PXHandler
+BOOL (*originalButtonHandling) (SpringBoard *, SEL, UIPressesEvent *);
+BOOL panicButtonHandling(SpringBoard *self, SEL _cmd, UIPressesEvent *sender) {
+	[[PXHandler globalHandler] handlePressesFrom:sender];
+	return originalButtonHandling(self, _cmd, sender);
+}
+
+__attribute__((constructor)) static void init() {
 	// Pref callback
 	notificationCallback();
 	CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, notificationCallback, CFSTR("me.renai.panic/options.update"), NULL, CFNotificationSuspensionBehaviorCoalesce);
@@ -64,18 +73,7 @@ __attribute__((constructor)) static void loadTweak(int __unused argc, char __unu
 	GenericHook(
 		objc_getClass("SpringBoard"),
 		@selector(_handlePhysicalButtonEvent:),
-		(IMP) &hooked_SpringBoard_handlePhysicalButtonEvent,
-		(IMP *) &orig_SpringBoard_handlePhysicalButtonEvent
+		(IMP) &panicButtonHandling,
+		(IMP *) &originalButtonHandling
 	);
-}
-
-static void hooked_SpringBoard_handlePhysicalButtonEvent(SpringBoard *self, SEL cmd, UIPressesEvent *sender) {
-	if (([PXHandler globalHandler].safemodeEnabled || [PXHandler globalHandler].respringEnabled) && sender.allPresses.allObjects[0] != nil) {
-		PXPhysicalButtonType buttonType = sender.allPresses.allObjects[0].type;
-		PXPhysicalButtonState buttonState = sender.allPresses.allObjects[0].force;
-		[[PXHandler globalHandler] handlePressWithType:buttonType state:buttonState];
-	}
-
-	NSLog(@"[Panic] %@", sender.allPresses);
-	orig_SpringBoard_handlePhysicalButtonEvent(self, cmd, sender);
 }
