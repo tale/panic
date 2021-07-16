@@ -1,5 +1,6 @@
 #import <Foundation/Foundation.h>
 #import <spawn.h>
+#import <UIKit/UIKit.h>
 
 typedef enum {
 	PXPhysicalButtonTypeVolumeUp = 102,
@@ -18,5 +19,5 @@ typedef enum {
 @property BOOL respringEnabled;
 @property BOOL safemodeEnabled;
 + (instancetype)globalHandler;
-- (void)handlePressWithType:(PXPhysicalButtonType)type state:(PXPhysicalButtonState)state;
+- (void)handlePressesFrom:(UIPressesEvent *)event;
 @end
