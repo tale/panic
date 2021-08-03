@@ -1,11 +1,8 @@
 #import "PXHandler.h"
 
 @interface PXHandler ()
-@property NSDate *cooldown;
-@property NSMutableArray<NSMutableString *> *builders;
-
-// This is needed so we can remove the extra event that's emitted when multiple buttons are triggered
-@property NSMutableArray<NSNumber *> *recentHistory;
+@property NSMutableArray<NSNumber *> *recentHistory; // Used to store current sequence triggered
+@property NSDate *cooldown; // Used for handling our sequence trigger cooldowns (1 second)
 @end
 
 @implementation PXHandler
@@ -16,7 +13,6 @@
 	dispatch_once(&once_token, ^{
 		handler = [[self alloc] init];
 		handler.cooldown = [NSDate date];
-		handler.builders = [handler clearedBuilders];
 		handler.recentHistory = [NSMutableArray new];
 	});
 
@@ -71,47 +67,34 @@
 		[self.recentHistory addObject:@(firstPress.type + secondPress.type)];
 	}
 
-	// This is delayed 150ms so that there's time for us to modify recentHistory on double button presses
-	dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 150 * NSEC_PER_MSEC), dispatch_get_main_queue(), ^{
-		NSLog(@"[Panic Current Info: %@", self.recentHistory);
+	// This is delayed 50ms so that there's time for us to modify recentHistory on double button presses
+	dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 50 * NSEC_PER_MSEC), dispatch_get_main_queue(), ^{
+		[self commitActions];
 	});
 }
 
-- (void)handlePressWithType:(PXPhysicalButtonType)type state:(PXPhysicalButtonState)state {
-	// Check to make sure that the button is within the constraints we need it to be
-	if (101 < type && type < 105 && state == PXPhysicalButtonStatePressed) {
-		// The cooldown time is negative for some reason so we just make sure it's less than -1
-		NSTimeInterval interval = [self.cooldown timeIntervalSinceNow];
-		if (interval < -1) self.builders = [self clearedBuilders];
-		self.cooldown = [NSDate date];
+- (void)commitActions {
+	// Yikes, because NSCountedSet reorders an NSArray, I have to convert the arrays to strings
+	NSString *recentPattern = [self.recentHistory componentsJoinedByString:@"."];
+	NSLog(@"[Panic] Current Pattern: %@", recentPattern);
 
-		for (NSMutableString *builder in self.builders) {
-			[builder appendString:[NSString stringWithFormat:@"%d.", type]];
-			// Get the coordinating sequence value from the preferences loaded array
-			for (NSString *sequence in self.sequences) {
-				if (builder.length >= sequence.length && [builder containsString:sequence]) {
-					self.builders = [self clearedBuilders];
-					// 0 = Respring | 1 = Safemode
-					if ([self.sequences indexOfObject:sequence] == 0) {
-						[self respringDevice];
-					} else if ([self.sequences indexOfObject:sequence] == 1) {
-						[self safemodeDevice];
-					} else {
-						NSLog(@"The array was larger than expected");
-					}
-				}
-			}
-		}
+	if ([recentPattern isEqualToString:self.respringSequence]) {
+		[self respringDevice];
+		return;
+	}
+
+	if ([recentPattern isEqualToString:self.safemodeSequence]) {
+		[self safemodeDevice];
+		return;
 	}
 }
 
 - (void)respringDevice {
 	if (self.respringEnabled) {
 		pid_t pid;
-		BOOL isDirectory;
 
 		// Check to see if 'sbreload' exists, otherwise just respring via 'killall'
-		if ([[NSFileManager defaultManager] fileExistsAtPath:@"/usr/bin/sbreload" isDirectory:&isDirectory]) {
+		if ([[NSFileManager defaultManager] fileExistsAtPath:@"/usr/bin/sbreload"]) {
 			const char* args[] = {"sbreload", NULL};
 			posix_spawn(&pid, "/usr/bin/sbreload", NULL, NULL, (char* const*)args, NULL);
 		} else {
@@ -127,13 +110,6 @@
 		const char* args[] = {"killall", "-SEGV", "SpringBoard", NULL};
 		posix_spawn(&pid, "/usr/bin/killall", NULL, NULL, (char* const*)args, NULL);
 	}
-}
-
-- (NSMutableArray<NSMutableString *> *)clearedBuilders {
-	return [@[
-		[@"" mutableCopy],
-		[@"" mutableCopy]
-	] mutableCopy];
 }
 
 @end
