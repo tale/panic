@@ -39,21 +39,16 @@ void GenericHook(Class class, SEL selector, IMP implementation, IMP *original) {
 }
 
 static void notificationCallback() {
-	NSUserDefaults *defaults = [[NSUserDefaults alloc] initWithSuiteName:@"me.renai.panic"];
+	NSUserDefaults *defaults = [[NSUserDefaults alloc] initWithSuiteName:@"me.tale.panic"];
 
-	NSNumber *respringEnabled = [defaults objectForKey:@"respring_enabled"];
-	NSNumber *safemodeEnabled = [defaults objectForKey:@"safemode_enabled"];
-	NSString *respringSequence = [defaults objectForKey:@"respring_sequence"] ?: @"102.103.104.";
-	NSString *safemodeSequence = [defaults objectForKey:@"safemode_sequence"] ?: @"104.103.102.";
+	NSArray *respringSequenceArray = [defaults arrayForKey:@"respring_sequence"] ?: @[ @"102", @"103", @"104" ];
+	[PXHandler globalHandler].respringSequence = [respringSequenceArray componentsJoinedByString:@"."];
+	[PXHandler globalHandler].respringEnabled = [defaults boolForKey:@"respring_enabled"] ?: YES;
 
-	// Unfortunately hacky code that has to be here because I don't want to figure out a proper solution for bad data in the Preferences Table
-	if ([defaults objectForKey:@"respring_sequence"] == nil) [defaults setObject:@"102.103.104." forKey:@"respring_sequence"];
-	if ([defaults objectForKey:@"safemode_sequence"] == nil) [defaults setObject:@"104.103.102." forKey:@"safemode_sequence"];
+	NSArray *safemodeSequenceArray = [defaults arrayForKey:@"safemode_sequence"] ?: @[ @"104", @"103", @"102" ];
+	[PXHandler globalHandler].safemodeSequence = [safemodeSequenceArray componentsJoinedByString:@"."];
+	[PXHandler globalHandler].safemodeEnabled = [defaults boolForKey:@"safemode_enabled"] ?: YES;
 
-	[PXHandler globalHandler].respringEnabled = [respringEnabled boolValue] ?: YES;
-	[PXHandler globalHandler].safemodeEnabled = [safemodeEnabled boolValue] ?: YES;
-	[PXHandler globalHandler].sequences = @[ respringSequence, safemodeSequence ];
-	NSLog(@"Safemode Sequence: %@ - %@ | Respring: %@ - %@", ([PXHandler globalHandler].safemodeEnabled ? @"YES" : @"NO"), safemodeSequence, ([PXHandler globalHandler].respringEnabled ? @"YES" : @"NO"), respringSequence);
 	NSLog(@"Updated Panic! Preferences");
 }
 
@@ -73,7 +68,7 @@ __attribute__((constructor)) static void init() {
 	GenericHook(
 		objc_getClass("SpringBoard"),
 		@selector(_handlePhysicalButtonEvent:),
-		(IMP) &panicButtonHandling,
-		(IMP *) &originalButtonHandling
+		(IMP)&panicButtonHandling,
+		(IMP *)&originalButtonHandling
 	);
 }
