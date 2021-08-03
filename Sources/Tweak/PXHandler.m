@@ -3,6 +3,7 @@
 @interface PXHandler ()
 @property NSMutableArray<NSNumber *> *recentHistory; // Used to store current sequence triggered
 @property NSDate *cooldown; // Used for handling our sequence trigger cooldowns (1 second)
+@property BOOL shouldRemoveLastValueOnSingle;
 @end
 
 @implementation PXHandler
@@ -14,6 +15,7 @@
 		handler = [[self alloc] init];
 		handler.cooldown = [NSDate date];
 		handler.recentHistory = [NSMutableArray new];
+		handler.shouldRemoveLastValueOnSingle = NO;
 	});
 
 	return handler;
@@ -51,12 +53,18 @@
 	// Single Buttons
 	if (presses.count == 1) {
 		UIPress *press = presses[0];
+
 		[self.recentHistory addObject:@(press.type)];
+		if (self.shouldRemoveLastValueOnSingle) {
+			[self.recentHistory removeLastObject];
+			self.shouldRemoveLastValueOnSingle = NO;
+		};
 	}
 
-	// 207 -> Volume Down + Power Button
-	// 206 -> Volume Up + Power Button
 	// 205 -> Volume Up + Volume Down
+	// 207 -> Home Button + Volume Up
+	// 208 -> Home Button + Volume Down
+	// 209 -> Home Button + Power Button
 
 	// For these, we sum the types and forces together
 	if (presses.count == 2) {
@@ -65,6 +73,7 @@
 
 		[self.recentHistory removeLastObject];
 		[self.recentHistory addObject:@(firstPress.type + secondPress.type)];
+		self.shouldRemoveLastValueOnSingle = YES;
 	}
 
 	// This is delayed 50ms so that there's time for us to modify recentHistory on double button presses
